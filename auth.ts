@@ -6,8 +6,9 @@ import CredentialsProvider from "next-auth/providers/credentials";
 // import { compare } from './lib/encrypt';
 import type { NextAuthConfig } from "next-auth";
 // import { cookies } from "next/headers";
-// import { NextResponse } from "next/server";
 import { compareSync } from "bcrypt-ts-edge";
+import { authConfig } from "./auth.config";
+import { cookies } from "next/headers";
 
 export const config = {
   pages: {
@@ -15,7 +16,7 @@ export const config = {
     error: "/sign-in",
   },
   session: {
-    strategy: "jwt",
+    strategy: "jwt" as const,
     maxAge: 30 * 24 * 60 * 60, // 30 days
   },
   adapter: PrismaAdapter(prisma),
@@ -68,7 +69,7 @@ export const config = {
       session.user.role = token.role;
       session.user.name = token.name;
 
-      console.log(token);
+      // console.log(token);
 
       // If there is an update, set the user name
       if (trigger === "update") {
@@ -77,11 +78,11 @@ export const config = {
 
       return session;
     },
-    async jwt({ token, user }: any) {
+    async jwt({ token, user, trigger }: any) {
       // async jwt({ token, user, trigger, session }: any) {
       // Assign user fields to token
       if (user) {
-        // token.id = user.id;
+        token.id = user.id;
         token.role = user.role;
 
         // If user has no name then use the email
@@ -95,29 +96,29 @@ export const config = {
           });
         }
 
-        // if (trigger === "signIn" || trigger === "signUp") {
-        //   const cookiesObject = await cookies();
-        //   const sessionCartId = cookiesObject.get("sessionCartId")?.value;
+        if (trigger === "signIn" || trigger === "signUp") {
+          const cookiesObject = await cookies();
+          const sessionCartId = cookiesObject.get("sessionCartId")?.value;
 
-        //   if (sessionCartId) {
-        //     const sessionCart = await prisma.cart.findFirst({
-        //       where: { sessionCartId },
-        //     });
+          if (sessionCartId) {
+            const sessionCart = await prisma.cart.findFirst({
+              where: { sessionCartId },
+            });
 
-        //     if (sessionCart) {
-        //       // Delete current user cart
-        //       await prisma.cart.deleteMany({
-        //         where: { userId: user.id },
-        //       });
+            if (sessionCart) {
+              // Delete current user cart
+              await prisma.cart.deleteMany({
+                where: { userId: user.id },
+              });
 
-        //       // Assign new cart
-        //       await prisma.cart.update({
-        //         where: { id: sessionCart.id },
-        //         data: { userId: user.id },
-        //       });
-        //     }
-        //   }
-        // }
+              // Assign new cart
+              await prisma.cart.update({
+                where: { id: sessionCart.id },
+                data: { userId: user.id },
+              });
+            }
+          }
+        }
       }
 
       // // Handle session updates
@@ -127,23 +128,24 @@ export const config = {
 
       return token;
     },
+    //!buradaki authorized ı auth.config.ts dosyasına taşıdık cunku hata verdi :) ve altta ... ile çağırdık
     // authorized({ request, auth }: any) {
-    //   // Array of regex patterns of paths we want to protect
-    //   const protectedPaths = [
-    //     /\/shipping-address/,
-    //     /\/payment-method/,
-    //     /\/place-order/,
-    //     /\/profile/,
-    //     /\/user\/(.*)/,
-    //     /\/order\/(.*)/,
-    //     /\/admin/,
-    //   ];
+    //   // // Array of regex patterns of paths we want to protect
+    //   // const protectedPaths = [
+    //   //   /\/shipping-address/,
+    //   //   /\/payment-method/,
+    //   //   /\/place-order/,
+    //   //   /\/profile/,
+    //   //   /\/user\/(.*)/,
+    //   //   /\/order\/(.*)/,
+    //   //   /\/admin/,
+    //   // ];
 
-    //   // Get pathname from the req URL object
-    //   const { pathname } = request.nextUrl;
+    //   // // Get pathname from the req URL object
+    //   // const { pathname } = request.nextUrl;
 
-    //   // Check if user is not authenticated and accessing a protected path
-    //   if (!auth && protectedPaths.some((p) => p.test(pathname))) return false;
+    //   // // Check if user is not authenticated and accessing a protected path
+    //   // if (!auth && protectedPaths.some((p) => p.test(pathname))) return false;
 
     //   // Check for session cart cookie
     //   if (!request.cookies.get("sessionCartId")) {
@@ -168,6 +170,7 @@ export const config = {
     //     return true;
     //   }
     // },
+    ...authConfig.callbacks,
   },
 } satisfies NextAuthConfig;
 
