@@ -9,24 +9,24 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-// import { Button } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 import { formatCurrency, formatDateTime, formatId } from "@/lib/utils";
 import { Order } from "@/types";
 import Link from "next/link";
 import Image from "next/image";
-// import { toast } from "sonner";
-// import { useTransition } from "react";
+import { toast } from "sonner";
+import { useTransition } from "react";
 // import {
 //   PayPalButtons,
 //   PayPalScriptProvider,
 //   usePayPalScriptReducer,
 // } from "@paypal/react-paypal-js";
-// import {
-//   createPayPalOrder,
-//   approvePayPalOrder,
-//   updateOrderToPaidCOD,
-//   deliverOrder,
-// } from "@/lib/actions/order.actions";
+import {
+  // createPayPalOrder,
+  // approvePayPalOrder,
+  updateOrderToPaidCOD,
+  deliverOrder,
+} from "@/lib/actions/order.actions";
 // import StripePayment from "./stripe-payment";
 
 //   paypalClientId,
@@ -34,10 +34,11 @@ import Image from "next/image";
 //   stripeClientSecret,
 const OrderDetailsTable = ({
   order,
+  isAdmin,
 }: {
   order: Omit<Order, "paymentResult">;
   //   paypalClientId: string;
-  //   isAdmin: boolean;
+  isAdmin: boolean;
   //   stripeClientSecret: string | null;
 }) => {
   const {
@@ -85,43 +86,56 @@ const OrderDetailsTable = ({
   //     res.success ? toast.success(res.message) : toast.error(res.message);
   //   };
 
-  //   const MarkAsPaidButton = () => {
-  //     const [isPending, startTransition] = useTransition();
+  //*COD
+  const MarkAsPaidButton = () => {
+    const [isPending, startTransition] = useTransition();
 
-  //     return (
-  //       <Button
-  //         type='button'
-  //         disabled={isPending}
-  //         onClick={() =>
-  //           startTransition(async () => {
-  //             const res = await updateOrderToPaidCOD(order.id);
-  //             res.success ? toast.success(res.message) : toast.error(res.message);
-  //           })
-  //         }
-  //       >
-  //         {isPending ? 'processing...' : 'Mark As Paid'}
-  //       </Button>
-  //     );
-  //   };
+    return (
+      <Button
+        type="button"
+        disabled={isPending}
+        onClick={() =>
+          startTransition(async () => {
+            const res = await updateOrderToPaidCOD(order.id);
+            if (res.success) {
+              toast.success(res.message);
+            } else {
+              toast.error(res.message);
+            }
+            //!
+            // res.success ? toast.success(res.message) : toast.error(res.message);  hata verir
+            // void (res.success ? toast.success(res.message) : toast.error(res.message)); toast bu yöntemle kullanılabilir ama if-else daha saglıklı
+          })
+        }
+      >
+        {isPending ? "processing..." : "Mark As Paid"}
+      </Button>
+    );
+  };
 
-  //   const MarkAsDeliveredButton = () => {
-  //     const [isPending, startTransition] = useTransition();
+  //*COD
+  const MarkAsDeliveredButton = () => {
+    const [isPending, startTransition] = useTransition();
 
-  //     return (
-  //       <Button
-  //         type='button'
-  //         disabled={isPending}
-  //         onClick={() =>
-  //           startTransition(async () => {
-  //             const res = await deliverOrder(order.id);
-  //             res.success ? toast.success(res.message) : toast.error(res.message);
-  //           })
-  //         }
-  //       >
-  //         {isPending ? 'processing...' : 'Mark As Delivered'}
-  //       </Button>
-  //     );
-  //   };
+    return (
+      <Button
+        type="button"
+        disabled={isPending}
+        onClick={() =>
+          startTransition(async () => {
+            const res = await deliverOrder(order.id);
+            if (res.success) {
+              toast.success(res.message);
+            } else {
+              toast.error(res.message);
+            }
+          })
+        }
+      >
+        {isPending ? "processing..." : "Mark As Delivered"}
+      </Button>
+    );
+  };
 
   return (
     <>
@@ -242,10 +256,10 @@ const OrderDetailsTable = ({
               )}
 
               {/* Cash On Delivery */}
-              {/* {isAdmin && !isPaid && paymentMethod === 'CashOnDelivery' && (
+              {isAdmin && !isPaid && paymentMethod === "CashOnDelivery" && (
                 <MarkAsPaidButton />
               )}
-              {isAdmin && isPaid && !isDelivered && <MarkAsDeliveredButton />} */}
+              {isAdmin && isPaid && !isDelivered && <MarkAsDeliveredButton />}
             </CardContent>
           </Card>
         </div>
